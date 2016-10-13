@@ -1,0 +1,17 @@
+foreach(snippet
+        container_algebra.hpp
+        default_operations.hpp
+        resize.hpp
+        runge_kutta4.hpp
+        simple_runge_kutta4.hpp
+        thrust_algebra.hpp
+        thrust_operations.hpp
+        vector_space_algebra.hpp
+        vexcl_resize.hpp
+        )
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/${snippet}
+        ${CMAKE_CURRENT_BINARY_DIR}/${snippet}
+        COPYONLY
+        )
+endforeach()
