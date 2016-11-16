@@ -12,8 +12,9 @@ struct local_force {
 
     local_force(double gamma = 0.0) : gamma(gamma) { }
 
-    VEX_FUNCTION(impl, cl_double2(cl_double2/*x*/, cl_double2/*v*/, double/*gamma*/),
-            "return -prm3 * prm2;");
+    VEX_FUNCTION(cl_double2, impl, (cl_double, x)(cl_double2, v)(double, gamma),
+            return -gamma * v;
+            );
 
     template <class X, class V>
     auto operator()(X &&x, V &&v) const {
@@ -29,9 +30,10 @@ struct lennard_jones {
     lennard_jones(double sigma = 1.0, double eps = 0.1)
         : sigma(sigma), eps(eps) { }
 
-    VEX_FUNCTION(impl, double(double/*r*/, double/*sigma*/, double/*eps*/),
-            "double c = prm2 / prm1, c3 = c * c * c, c6 = c3 * c3;\n"
-            "return prm3 * c6 * (24.0 - 48.0 * c6) / prm1;");
+    VEX_FUNCTION(double, impl, (double, r)(double, sigma)(double, eps),
+            double c = sigma / r, c3 = c * c * c, c6 = c3 * c3;
+            return eps * c6 * (24.0 - 48.0 * c6) / r;
+            );
 
     template <class R>
     auto operator()(R &&r) const {
@@ -80,17 +82,12 @@ struct md_system {
 
         periodic_bc_type(double xmax, double ymax) : xmax(xmax), ymax(ymax) {}
 
-        VEX_FUNCTION_WITH_PREAMBLE(impl,
-                cl_double2(
-                    cl_double2, // prm1 = p
-                    double,     // prm2 = xmax
-                    double      // prm3 = ymax
-                    ),
-                "double bc(double x, double m) {\n"
-                "  double t = x - m * (int)(x / m);\n"
-                "  return t >= 0.0 ? t : t + m;\n"
-                "}",
-                "return (double2)( bc(prm1.x, prm2), bc(prm1.y, prm3) );"
+        VEX_FUNCTION(double, bc, (double,x)(double,y),
+                double t = x - m * (int)(x / m);
+                return t >= 0.0 ? t : t + m;
+                );
+        VEX_FUNCTION_D(cl_double2, impl, (cl_double2, p)(double, xmax)(double, ymax), (bc),
+                return (double2)( bc(p.x, xmax), bc(p.y, ymax) );
                 );
 
         template <class P>

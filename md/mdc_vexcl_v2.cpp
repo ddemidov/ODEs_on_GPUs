@@ -90,68 +90,49 @@ struct md_system_bs {
         local_force_type local_force;
     } prm;
 
-    VEX_FUNCTION_WITH_PREAMBLE(periodic_bc,
-            point_type(
-                point_type, // prm1 = p
-                double,     // prm2 = xmax
-                double      // prm3 = ymax
-                ),
-            "double bc(double x, double m) {\n"
-            "  double t = x - m * (int)(x / m);\n"
-            "  return t >= 0.0 ? t : t + m;\n"
-            "}",
-            "return (double2)( bc(prm1.x, prm2), bc(prm1.y, prm3) );"
+    VEX_FUNCTION(double, BC, (double, x)(double, m),
+            double t = x - m * (int)(x / m);
+            return t >= 0.0 ? t : t + m;
             );
 
-    VEX_FUNCTION_WITH_PREAMBLE(get_cell_idx,
-            hash_type(
-                index_type, // prm1 = i
-                cl_uint,    // prm2 = nx
-                cl_uint     // prm3 = ny
-                ),
-            "int check(int k, int n) {\n"
-            "  int tmp = k % n;\n"
-            "  return tmp >= 0 ? tmp : tmp + n;\n"
-            "}",
-            "int i1 = check(prm1.x, prm2);\n"
-            "int i2 = check(prm1.y, prm3);\n"
-            "return i1 * prm3 + i2;\n"
+    VEX_FUNCTION_D(point_type, periodic_bc, (point_type, p)(double, xmax)(double, ymax), (BC),
+            return (double2)( bc(p.x, xmax), bc(p.y, ymax) );
             );
 
-    VEX_FUNCTION(lo_bound,
-            hash_type(
-                hash_type*, // prm1 = x
-                size_t,     // prm2 = n
-                size_t      // prm3 = v
-                ),
-            "size_t begin = 0;\n"
-            "size_t end   = prm2;\n"
-            "while(end > begin) {\n"
-            "    size_t mid = begin + (end - begin) / 2;\n"
-            "    if (prm1[mid] < prm3)\n"
-            "        begin = ++mid;\n"
-            "    else\n"
-            "        end = mid;\n"
-            "}\n"
-            "return begin;"
+    VEX_FUNCTION(int, check, (int, k)(int, n),
+            int tmp = k % n;
+            return tmp >= 0 ? tmp : tmp + n;
+            );
+    VEX_FUNCTION_D(hash_type, get_cell_idx, (index_type, i)(cl_uint, nx)(cl_uint, ny), (check),
+            int i1 = check(i.x, nx);
+            int i2 = check(i.y, ny);
+            return i1 * ny + i2;
             );
 
-    VEX_FUNCTION(hi_bound,
-            hash_type(
-                hash_type*, // prm1 = x
-                size_t,     // prm2 = n
-                size_t      // prm3 = v
-                ),
-            "size_t begin = 0;\n"
-            "size_t end   = prm2;\n"
-            "while(end > begin) {\n"
-            "    size_t mid = begin + (end - begin) / 2;\n"
-            "    if (prm1[mid] <= prm3)\n"
-            "        begin = ++mid;\n"
-            "    else\n"
-            "        end = mid;\n"
-            "}\n"
-            "return begin;"
+    VEX_FUNCTION(hash_type, lo_bound, (hash_type*, x)(size_t, n)(size_t, v),
+            size_t begin = 0;
+            size_t end   = n;
+            while(end > begin) {
+                size_t mid = begin + (end - begin) / 2;
+                if (x[mid] < v)
+                    begin = ++mid;
+                else
+                    end = mid;
+            }
+            return begin;
+            );
+
+    VEX_FUNCTION(hash_type, hi_bound, (hash_type*, x)(size_t, n)(size_t, v),
+            size_t begin = 0;
+            size_t end   = n;
+            while(end > begin) {
+                size_t mid = begin + (end - begin) / 2;
+                if (x[mid] <= v)
+                    begin = ++mid;
+                else
+                    end = mid;
+            }
+            return begin;
             );
 
     mutable index_vector cell_coo;
@@ -250,9 +231,9 @@ struct md_system_bs {
         using namespace vex;
         auto ctx = x.queue_list();
 
-        VEX_FUNCTION(make_idx, cl_int2(cl_int,cl_int), "return (int2)(prm1,prm2);");
-        VEX_FUNCTION(get_x, double(cl_double2), "return prm1.x;");
-        VEX_FUNCTION(get_y, double(cl_double2), "return prm1.y;");
+        VEX_FUNCTION(cl_int2, make_idx, (cl_int, x)(cl_int, y), return (int2)(x,y););
+        VEX_FUNCTION(double, get_x, (cl_double2,p), return p.x;);
+        VEX_FUNCTION(double, get_y, (cl_double2,p), return p.y;);
 
         // Assign each particle to a cell, reset ordering.
         auto index = make_temp<1>(

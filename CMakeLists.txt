@@ -33,7 +33,7 @@ if (CUDA_FOUND)
     include_directories( ${CUDA_INCLUDE_DIRS} )
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wno-ignored-attributes")
 
 option(SHOW_OUTPUT "Show output" OFF)
 if (SHOW_OUTPUT)
@@ -43,14 +43,14 @@ endif()
 function(add_thrust_cpu_executable target source)
     if (CUDA_FOUND)
         cuda_add_executable(${target} ${source}
-            OPTIONS "-Xcompiler;-fopenmp;-O3;-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP;-DCPU_RUN")
+            OPTIONS "-Xcompiler -fopenmp -Xcompiler -std=c++03 -O3 -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP -DCPU_RUN")
         target_link_libraries(${target} gomp ${Boost_LIBRARIES})
     endif()
 endfunction()
 
 function(add_thrust_gpu_executable target source)
     if (CUDA_FOUND)
-        cuda_add_executable(${target} ${source} OPTIONS "-O3")
+        cuda_add_executable(${target} ${source} OPTIONS "-O3 -Xcompiler -std=c++03")
         target_link_libraries(${target} ${Boost_LIBRARIES})
 
     endif()

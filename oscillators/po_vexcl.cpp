@@ -31,10 +31,12 @@ struct phase_oscillators {
     void operator()(const state_type &phi, state_type &dxdt,
             double t) const
     {
-        VEX_FUNCTION(left,  size_t(size_t),
-                "return (prm1 > 0) ? prm1 - 1 : 0;");
-        VEX_FUNCTION(right, size_t(size_t, size_t),
-                "return (prm1 >= prm2) ? prm2 : prm1 + 1;");
+        VEX_FUNCTION(size_t, left,  (size_t, i),
+                return (i > 0) ? i - 1 : 0;
+                );
+        VEX_FUNCTION(size_t, right, (size_t, i)(size_t, n),
+                return (i >= n) ? n : i + 1;
+                );
 
         auto idx = vex::element_index();
         auto phi_l=vex::permutation(left(idx))(phi);
