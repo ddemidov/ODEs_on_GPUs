@@ -12,7 +12,7 @@ struct local_force {
 
     local_force(double gamma = 0.0) : gamma(gamma) { }
 
-    VEX_FUNCTION(cl_double2, impl, (cl_double, x)(cl_double2, v)(double, gamma),
+    VEX_FUNCTION(cl_double2, impl, (cl_double2, x)(cl_double2, v)(double, gamma),
             return -gamma * v;
             );
 
@@ -82,7 +82,7 @@ struct md_system {
 
         periodic_bc_type(double xmax, double ymax) : xmax(xmax), ymax(ymax) {}
 
-        VEX_FUNCTION(double, bc, (double,x)(double,y),
+        VEX_FUNCTION(double, bc, (double,x)(double,m),
                 double t = x - m * (int)(x / m);
                 return t >= 0.0 ? t : t + m;
                 );
