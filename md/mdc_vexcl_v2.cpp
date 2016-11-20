@@ -96,7 +96,7 @@ struct md_system_bs {
             );
 
     VEX_FUNCTION_D(point_type, periodic_bc, (point_type, p)(double, xmax)(double, ymax), (BC),
-            return (double2)( bc(p.x, xmax), bc(p.y, ymax) );
+            return (double2)( BC(p.x, xmax), BC(p.y, ymax) );
             );
 
     VEX_FUNCTION(int, check, (int, k)(int, n),
